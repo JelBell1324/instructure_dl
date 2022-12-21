@@ -1,0 +1,157 @@
+package application; // could be different
+
+import java.util.*;
+
+
+import javafx.application.Application;
+import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
+import javafx.scene.Scene;
+import javafx.scene.control.Button;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
+import javafx.scene.layout.StackPane;
+import javafx.scene.paint.Color;
+import javafx.scene.text.Text;
+import javafx.scene.text.TextAlignment;
+import javafx.stage.Stage;
+ 
+public class Main extends Application { // could be different
+    public static void main(String[] args) { launch(args); }
+    
+    @Override
+    public void start(Stage primaryStage) {
+    	
+        primaryStage.setTitle("Vending Machine");
+       
+        
+        DataFile myData = new DataFile("src/application/directory.txt", "src/application/input.txt");
+        
+   
+	    
+	    //initialize Vending machine with loaded data
+	    ArrayList <String> myVending = myData.loadDirectory();
+	    ArrayList <Integer> mySelections = myData.loadSampleInput();
+
+	    Vending myMachine = new Vending(myVending);
+	    myMachine.unloadItems(mySelections);
+
+	    /*****************/
+	    // Above DisplayItems() call is fine, but the Vending machine's deconstructor 
+	    // should call that function since it's the LAST operation. Notice it could be
+	    // done with a helper function that USES the toString()
+	    // We will NOT call DisplayItems() in testing 
+	    /*****************/
+        StackPane root = new StackPane();
+	    ArrayList<Queue<Item>> slots = myMachine.getSlots();
+	    ArrayList<String> itemNames = myMachine.getDirectory();
+	    Map<String, String> typeStore = myMachine.getTypes();
+	    ArrayList<Button> buttons = new ArrayList<Button>();
+	    ArrayList<Text> texts = new ArrayList<Text>();
+	    ArrayList<ImageView> images = new ArrayList<ImageView>();
+	    ArrayList<Item> names = new ArrayList<Item>();
+	    
+	    
+	    Button resetBtn = new Button();
+	    resetBtn.setText("Reset Inventory");
+	    resetBtn.setTranslateX(-400);
+	    resetBtn.setTranslateY(-350);
+	    resetBtn.setOnAction(new EventHandler<ActionEvent>() {
+   		 @Override
+            public void handle(ActionEvent event) {
+   			 	primaryStage.close();
+                start(new Stage());
+            }
+	    });
+	    
+	    root.getChildren().add(resetBtn);
+	    
+	    Text commandText = new Text();
+        commandText.setTranslateY(300);
+        commandText.setTextAlignment(TextAlignment.CENTER);
+	    
+	    for (int i = 0; i < slots.size(); i++) {
+	    	Button btn = new Button();
+	    	Text text = new Text();
+	    	text.setTextAlignment(TextAlignment.CENTER);
+	    	
+	    	String sourcelink = "";
+	    	
+	    	
+	    	ImageView image1;
+	    	
+    		if (typeStore.get(itemNames.get(i)).equals("Drink")) {
+	    		sourcelink = "/application/drink.jpeg";
+	    		Image image = new Image(sourcelink, true);
+		    	text.setText(slots.get(i).peek().toString() + "Count : " + Integer.toString(slots.get(i).size()));
+		    	names.add(slots.get(i).peek());
+		    	image1 = new ImageView(image);
+		    	image1.setFitWidth(70);
+	    	} else {
+	    		sourcelink = "/application/snack.jpeg";
+	    		Image image = new Image(sourcelink, true);
+		    	text.setText(slots.get(i).peek().toString() + "Count : " + Integer.toString(slots.get(i).size()));
+		    	names.add(slots.get(i).peek());
+		    	image1 = new ImageView(image);
+		    	image1.setFitWidth(100);
+	    	}
+	    		    	
+	    	
+	    	btn.setText("Buy");
+	    	final Integer inneri = new Integer(i);
+	    	
+	    	double xTrans = -250 + 175 * (i % 4);
+	    	double yTrans = -175 + 225 * (i / 4);
+	    	
+	    	btn.setOnAction(new EventHandler<ActionEvent>() {
+	    		 @Override
+	             public void handle(ActionEvent event) {
+	                 int choice = myMachine.unloadItems(inneri);
+	                 if (choice != -1) {
+	                	 Text t = (Text) root.getChildren().get(choice * 3 + 2);
+	                	 t.setText(names.get(choice).toString() + "Count : " + Integer.toString(slots.get(choice).size()));
+	                	 commandText.setText("Successfully purchased  " + itemNames.get(choice) + " from slot " +Integer.toString(choice +1));
+	                	 commandText.setFill(Color.GREEN);
+	                 } else {
+	                	 commandText.setText("The vending machine has run out of " + itemNames.get(inneri) + ", sorry.");
+	                	 commandText.setFill(Color.RED);
+	                 } 
+	         	     myMachine.displayItems(); 
+	         	 }
+	    	});
+	    	
+	    	text.setTranslateX(xTrans);
+        	text.setTranslateY(yTrans - 45);
+        	texts.add(text);
+	    	
+	    	btn.setTranslateX(xTrans);
+        	btn.setTranslateY(yTrans);
+	    	buttons.add(btn);
+	    	
+	    	image1.setTranslateX(xTrans);
+	    	image1.setTranslateY(yTrans - 130);
+	        image1.setPreserveRatio(true);
+	        image1.setSmooth(true);
+	        image1.setCache(true);
+	       
+	    	images.add(image1);
+	    }
+        
+	    
+        root.setStyle("-fx-background-color: white;");
+        for (int i = 0; i < buttons.size(); i++) {
+        	root.getChildren().add(buttons.get(i));
+        	root.getChildren().add(texts.get(i));
+        	root.getChildren().add(images.get(i));
+        }
+        
+        root.getChildren().add(commandText);
+        
+        
+        primaryStage.setScene(new Scene(root, 1000, 1000));
+   
+        
+        primaryStage.show();
+    }
+}
+
